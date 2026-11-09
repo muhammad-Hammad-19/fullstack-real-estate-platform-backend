@@ -1,11 +1,9 @@
-import express from "express";
+﻿import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { createServer } from "node:http";
 
 import { connectDB } from "./db/db.js";
-import { initSocket } from "./socket/socket.js";
 import prisma from "./lib/prisma.js";
 
 import authRoute from "./routes/authRoutes.js";
@@ -17,9 +15,7 @@ import messagesRoute from "./routes/messageRoutes.js";
 dotenv.config();
 
 const app = express();
-const server = createServer(app);
 const PORT = process.env.PORT || 3000;
-const isVercel = process.env.VERCEL === "1";
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim())
@@ -45,12 +41,6 @@ app.use(
   }),
 );
 app.use(express.json());
-
-// Vercel Functions cannot keep a listening server or WebSocket connection alive.
-// Socket.IO remains enabled for local/long-running Node deployments.
-if (!isVercel) {
-  initSocket(server);
-}
 
 // Wait for MongoDB before handling any route in local and serverless runtimes.
 app.use(async (_req, _res, next) => {
@@ -88,8 +78,8 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-if (!isVercel) {
-  server.listen(PORT, () => {
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT, () => {
     console.log(`API server running on port ${PORT}`);
   });
 }
